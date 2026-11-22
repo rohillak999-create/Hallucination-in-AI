@@ -1,0 +1,377 @@
+{
+  "project": "Context-Grounded Hallucination Detector for QA",
+  "experiment_name": "hallucination-detector-qa",
+  "trained_at_utc": "2026-11-22T07:42:20.241905+00:00",
+  "best_model_name": "HistGradientBoosting_Classifier",
+  "best_run_id": "d4e4e4dda2164b38894a6e51cb9b8921",
+  "model_artifact_path": "model/hallucination_detector.joblib",
+  "feature_names": [
+    "ans_ctx_or_q_overlap",
+    "content_ctx_or_q_overlap",
+    "content_ctx_overlap",
+    "new_info_grounding_ratio",
+    "novel_ungrounded_token_ratio",
+    "ungrounded_new_token_count",
+    "new_info_substring_in_ctx",
+    "bigram_grounding_ratio",
+    "best_sentence_support",
+    "best_sentence_full_content_support",
+    "char_ngram_containment",
+    "number_grounding_ratio",
+    "ungrounded_number_flag",
+    "entity_grounding_ratio",
+    "ungrounded_entity_flag",
+    "negation_mismatch_flag",
+    "contradiction_cue_flag"
+  ],
+  "best_test_metrics": {
+    "accuracy": 0.9087,
+    "precision": 0.9499,
+    "recall": 0.863,
+    "f1_score": 0.9044,
+    "roc_auc": 0.9685,
+    "log_loss": 0.2252,
+    "true_negatives": 1909,
+    "false_positives": 91,
+    "false_negatives": 274,
+    "true_positives": 1726
+  },
+  "sanity_checks": [
+    {
+      "case": "Grounded short span",
+      "expected": 0,
+      "predicted": 0,
+      "hallucination_prob": 0.044,
+      "passed": true
+    },
+    {
+      "case": "Grounded full sentence",
+      "expected": 0,
+      "predicted": 0,
+      "hallucination_prob": 0.0562,
+      "passed": true
+    },
+    {
+      "case": "Hallucinated full sentence",
+      "expected": 1,
+      "predicted": 1,
+      "hallucination_prob": 0.9999,
+      "passed": true
+    },
+    {
+      "case": "Hallucinated short span",
+      "expected": 1,
+      "predicted": 1,
+      "hallucination_prob": 0.9998,
+      "passed": true
+    },
+    {
+      "case": "Hallucinated year mismatch",
+      "expected": 1,
+      "predicted": 1,
+      "hallucination_prob": 0.9993,
+      "passed": true
+    }
+  ],
+  "all_runs": [
+    {
+      "model_name": "LogisticRegression_L2",
+      "run_id": "b5570b7e579e4dd7ad4ed0d4cc035241",
+      "params": {
+        "model_family": "LogisticRegression",
+        "C": 1.0,
+        "penalty": "l2",
+        "solver": "lbfgs",
+        "max_iter": 1000,
+        "scaled": true
+      },
+      "test_metrics": {
+        "accuracy": 0.9025,
+        "precision": 0.9404,
+        "recall": 0.8595,
+        "f1_score": 0.8981,
+        "roc_auc": 0.9575,
+        "log_loss": 0.2836,
+        "true_negatives": 1891,
+        "false_positives": 109,
+        "false_negatives": 281,
+        "true_positives": 1719
+      },
+      "train_metrics": {
+        "accuracy": 0.9209,
+        "precision": 0.9159,
+        "recall": 0.9173,
+        "f1_score": 0.9166,
+        "roc_auc": 0.9618,
+        "log_loss": 0.2235,
+        "true_negatives": 14787,
+        "false_positives": 1213,
+        "false_negatives": 1191,
+        "true_positives": 13209
+      },
+      "sanity_checks": [
+        {
+          "case": "Grounded short span",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.0518,
+          "passed": true
+        },
+        {
+          "case": "Grounded full sentence",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.0595,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated full sentence",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.997,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated short span",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9971,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated year mismatch",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9818,
+          "passed": true
+        }
+      ],
+      "sanity_pass_rate": 1.0,
+      "train_time_sec": 0.243
+    },
+    {
+      "model_name": "RandomForest_Classifier",
+      "run_id": "fb3ff467790044d5bd72e888c69b137d",
+      "params": {
+        "model_family": "RandomForestClassifier",
+        "n_estimators": 200,
+        "max_depth": 8,
+        "min_samples_leaf": 10,
+        "max_features": "sqrt"
+      },
+      "test_metrics": {
+        "accuracy": 0.9008,
+        "precision": 0.9485,
+        "recall": 0.8475,
+        "f1_score": 0.8952,
+        "roc_auc": 0.9657,
+        "log_loss": 0.2448,
+        "true_negatives": 1908,
+        "false_positives": 92,
+        "false_negatives": 305,
+        "true_positives": 1695
+      },
+      "train_metrics": {
+        "accuracy": 0.9377,
+        "precision": 0.9512,
+        "recall": 0.9156,
+        "f1_score": 0.933,
+        "roc_auc": 0.9702,
+        "log_loss": 0.1818,
+        "true_negatives": 15323,
+        "false_positives": 677,
+        "false_negatives": 1216,
+        "true_positives": 13184
+      },
+      "sanity_checks": [
+        {
+          "case": "Grounded short span",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.0509,
+          "passed": true
+        },
+        {
+          "case": "Grounded full sentence",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.0778,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated full sentence",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9995,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated short span",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9925,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated year mismatch",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9953,
+          "passed": true
+        }
+      ],
+      "sanity_pass_rate": 1.0,
+      "train_time_sec": 0.318
+    },
+    {
+      "model_name": "GradientBoosting_Classifier",
+      "run_id": "88cd925c17d142e99e00ae7127b4f759",
+      "params": {
+        "model_family": "GradientBoostingClassifier",
+        "n_estimators": 150,
+        "learning_rate": 0.08,
+        "max_depth": 4,
+        "min_samples_leaf": 15,
+        "subsample": 0.85
+      },
+      "test_metrics": {
+        "accuracy": 0.9048,
+        "precision": 0.9485,
+        "recall": 0.856,
+        "f1_score": 0.8999,
+        "roc_auc": 0.9683,
+        "log_loss": 0.2293,
+        "true_negatives": 1907,
+        "false_positives": 93,
+        "false_negatives": 288,
+        "true_positives": 1712
+      },
+      "train_metrics": {
+        "accuracy": 0.9447,
+        "precision": 0.9595,
+        "recall": 0.9221,
+        "f1_score": 0.9404,
+        "roc_auc": 0.9723,
+        "log_loss": 0.1615,
+        "true_negatives": 15440,
+        "false_positives": 560,
+        "false_negatives": 1122,
+        "true_positives": 13278
+      },
+      "sanity_checks": [
+        {
+          "case": "Grounded short span",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.044,
+          "passed": true
+        },
+        {
+          "case": "Grounded full sentence",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.0588,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated full sentence",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9995,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated short span",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9961,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated year mismatch",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9989,
+          "passed": true
+        }
+      ],
+      "sanity_pass_rate": 1.0,
+      "train_time_sec": 2.075
+    },
+    {
+      "model_name": "HistGradientBoosting_Classifier",
+      "run_id": "d4e4e4dda2164b38894a6e51cb9b8921",
+      "params": {
+        "model_family": "HistGradientBoostingClassifier",
+        "max_iter": 200,
+        "learning_rate": 0.06,
+        "max_depth": 6,
+        "min_samples_leaf": 25,
+        "l2_regularization": 1.0
+      },
+      "test_metrics": {
+        "accuracy": 0.9087,
+        "precision": 0.9499,
+        "recall": 0.863,
+        "f1_score": 0.9044,
+        "roc_auc": 0.9685,
+        "log_loss": 0.2252,
+        "true_negatives": 1909,
+        "false_positives": 91,
+        "false_negatives": 274,
+        "true_positives": 1726
+      },
+      "train_metrics": {
+        "accuracy": 0.9472,
+        "precision": 0.9633,
+        "recall": 0.9237,
+        "f1_score": 0.9431,
+        "roc_auc": 0.9731,
+        "log_loss": 0.1569,
+        "true_negatives": 15493,
+        "false_positives": 507,
+        "false_negatives": 1098,
+        "true_positives": 13302
+      },
+      "sanity_checks": [
+        {
+          "case": "Grounded short span",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.044,
+          "passed": true
+        },
+        {
+          "case": "Grounded full sentence",
+          "expected": 0,
+          "predicted": 0,
+          "hallucination_prob": 0.0562,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated full sentence",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9999,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated short span",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9998,
+          "passed": true
+        },
+        {
+          "case": "Hallucinated year mismatch",
+          "expected": 1,
+          "predicted": 1,
+          "hallucination_prob": 0.9993,
+          "passed": true
+        }
+      ],
+      "sanity_pass_rate": 1.0,
+      "train_time_sec": 0.923
+    }
+  ]
+}

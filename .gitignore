@@ -1,0 +1,29 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# MLflow tracking & artifacts
+mlruns/
+mlartifacts/
+mlflow.db
+
+# Exclude generated processed CSVs while tracking raw dataset, scripts, and model artifacts
+data/*.csv
+!data/prepare_data.py
+!model/hallucination_detector.joblib
+!model/model_metadata.json
+
+# Environment variables, reports & OS files
+*.pdf
+.env
+.DS_Store
+Thumbs.db

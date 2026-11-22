@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Context-Grounded QA Hallucination Detector</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f0e6;
+      --surface: #fffdf9;
+      --surface-elevated: #f2eadf;
+      --surface-hover: #eadfcd;
+      --input-bg: #fcfaf5;
+      --border: #ded2c0;
+      --border-strong: #cbbba4;
+      --text: #2a211c;
+      --text-secondary: #4a3b32;
+      --text-muted: #786658;
+      --accent: #9c5236;
+      --accent-hover: #814027;
+      --accent-soft: rgba(156, 82, 54, 0.1);
+      --grounded-bg: #ecf4ee;
+      --grounded-border: #4d7c5b;
+      --grounded-text: #285536;
+      --hallucinated-bg: #fbeee9;
+      --hallucinated-border: #c4553d;
+      --hallucinated-text: #96331f;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 18px rgba(68, 52, 40, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: radial-gradient(circle at top right, #ece1d0 0%, var(--bg) 60%);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      max-width: 1240px;
+      height: 100vh;
+      margin: 0 auto;
+      padding: 1.1rem 1.5rem 1.25rem;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 1rem;
+    }
+
+    /* Top Header Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--grounded-border);
+    }
+
+    .nav-link {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .nav-link:hover {
+      background: var(--surface-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Main Two-Column Single-Frame Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 1.25rem;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.15rem 1.3rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 1.02rem;
+      font-weight: 750;
+      color: var(--text);
+    }
+
+    .panel-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Single-Line Preset Bar */
+    .presets-strip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: nowrap;
+      padding: 0.45rem 0.6rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 0.85rem;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .presets-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-right: 0.15rem;
+      white-space: nowrap;
+    }
+
+    .preset-chip {
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text-secondary);
+      padding: 0.28rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .preset-chip:hover {
+      border-color: var(--accent);
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .preset-chip.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .chip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .chip-dot.grounded {
+      background: var(--grounded-border);
+    }
+
+    .chip-dot.hallucinated {
+      background: var(--hallucinated-border);
+    }
+
+    /* Form Layout */
+    #predict-form {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      gap: 0.7rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .field.grow-context {
+      flex: 1.4;
+    }
+
+    .field.grow-answer {
+      flex: 0.85;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 650;
+      margin-bottom: 0.3rem;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    label .hint {
+      font-weight: 400;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.8rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      resize: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .field.grow-context textarea,
+    .field.grow-answer textarea {
+      flex: 1;
+      min-height: 0;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(156, 82, 54, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.65rem;
+      margin-top: 0.15rem;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: var(--accent);
+      color: #fffdf9;
+      border: none;
+      padding: 0.7rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 650;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 0.7rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+
+    /* Right Panel: Clean, Simple Result Layout */
+    .result-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      gap: 0.9rem;
+    }
+
+    .verdict-card {
+      padding: 1.1rem 1.2rem;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .verdict-card.grounded {
+      background: var(--grounded-bg);
+      border-color: var(--grounded-border);
+    }
+
+    .verdict-card.hallucinated {
+      background: var(--hallucinated-bg);
+      border-color: var(--hallucinated-border);
+    }
+
+    .verdict-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .verdict-badge {
+      font-size: 0.72rem;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+    }
+
+    .verdict-card.grounded .verdict-badge {
+      background: rgba(77, 124, 91, 0.16);
+      color: var(--grounded-text);
+    }
+
+    .verdict-card.hallucinated .verdict-badge {
+      background: rgba(196, 85, 61, 0.16);
+      color: var(--hallucinated-text);
+    }
+
+    .verdict-title {
+      font-size: 1.32rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .verdict-card.grounded .verdict-title {
+      color: var(--grounded-text);
+    }
+
+    .verdict-card.hallucinated .verdict-title {
+      color: var(--hallucinated-text);
+    }
+
+    .verdict-summary {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Simple Two-Box Score Summary */
+    .prob-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .prob-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+    }
+
+    .prob-card .lbl {
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .prob-card .val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: #ded2c0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+
+    .bar-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    /* Simple Checklist Rows (Replaces Complicated Technical Boxes) */
+    .checklist-section {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .checklist-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 0.55rem;
+      flex-shrink: 0;
+    }
+
+    .checklist-stack {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.55rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .check-row {
+      flex: 1;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.95rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .check-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .check-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .check-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .status-badge.ok {
+      background: var(--grounded-bg);
+      border: 1px solid rgba(77, 124, 91, 0.35);
+      color: var(--grounded-text);
+    }
+
+    .status-badge.warn {
+      background: var(--hallucinated-bg);
+      border: 1px solid rgba(196, 85, 61, 0.35);
+      color: var(--hallucinated-text);
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      background: var(--surface-elevated);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+    }
+
+    .error-msg {
+      background: var(--hallucinated-bg);
+      border: 1px solid var(--hallucinated-border);
+      color: var(--hallucinated-text);
+      padding: 0.5rem 0.75rem;
+      border-radius: (--radius-sm);
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 920px) {
+      html, body {
+        height: auto;
+        overflow: auto;
+      }
+      .app-shell {
+        height: auto;
+      }
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="brand">
+        <h1>Context-Grounded QA Hallucination Detector</h1>
+      </div>
+      <div class="header-right">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span id="model-status-text">Detector Active</span>
+        </div>
+        <a href="/docs" target="_blank" rel="noopener" class="nav-link">API Docs</a>
+        <a href="/health" target="_blank" rel="noopener" class="nav-link">Health</a>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <!-- Left Column: Input Form -->
+      <section class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Check an Answer</span>
+          <span class="panel-subtitle">Enter your text, question, and answer below</span>
+        </div>
+
+        <div class="presets-strip" id="examples-container">
+          <span class="presets-label">Try Example:</span>
+        </div>
+
+        <div id="error-box" class="error-msg"></div>
+
+        <form id="predict-form">
+          <div class="field grow-context">
+            <label for="context-input">
+              <span>1. Context (Reference Text)</span>
+              <span class="hint">The source paragraph with the real facts</span>
+            </label>
+            <textarea id="context-input" required minlength="5" placeholder="Paste the source paragraph here..."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="question-input">
+              <span>2. Question</span>
+              <span class="hint">What is being asked?</span>
+            </label>
+            <input type="text" id="question-input" required minlength="3" placeholder="e.g., The Oberoi family is part of a hotel company that has a head office in what city?" />
+          </div>
+
+          <div class="field grow-answer">
+            <label for="answer-input">
+              <span>3. Answer to Check</span>
+              <span class="hint">The answer you want to test for hallucination</span>
+            </label>
+            <textarea id="answer-input" required minlength="1" placeholder="e.g., The Oberoi family's hotel company is based in Mumbai."></textarea>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn-primary" id="submit-btn">Check Answer</button>
+            <button type="button" class="btn-secondary" id="clear-btn">Clear</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Simple Result & Checklist -->
+      <section class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Answer Check Result</span>
+          <span class="panel-subtitle">Compared against your reference text</span>
+        </div>
+
+        <div id="result-placeholder" class="empty-state">
+          Click one of the <strong>Try Example</strong> buttons on the left or enter your own <strong>Context</strong>, <strong>Question</strong>, and <strong>Answer</strong> to check if it is accurate or hallucinated.
+        </div>
+
+        <div id="result-content" class="result-body" style="display: none;">
+          <div id="verdict-card" class="verdict-card grounded">
+            <div class="verdict-top">
+              <span class="verdict-title" id="verdict-title">Correct (No Hallucination)</span>
+              <span class="verdict-badge" id="verdict-badge">Matches Context</span>
+            </div>
+            <p class="verdict-summary" id="verdict-summary"></p>
+          </div>
+
+          <div class="prob-grid">
+            <div class="prob-card">
+              <div class="lbl">Context Match Score</div>
+              <div class="val" id="grounding-score-val" style="color: var(--grounded-text);">0%</div>
+              <div class="bar-track">
+                <div class="bar-fill" id="grounding-bar" style="width: 0%; background: var(--grounded-border);"></div>
+              </div>
+            </div>
+            <div class="prob-card">
+              <div class="lbl">Hallucination Chance</div>
+              <div class="val" id="hallucination-prob-val" style="color: var(--hallucinated-text);">0%</div>
+              <div class="bar-track">
+                <div class="bar-fill" id="hallucination-bar" style="width: 0%; background: var(--hallucinated-border);"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="checklist-section">
+            <div class="checklist-heading">Why did it get this result?</div>
+            <div class="checklist-stack" id="checklist-stack"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const contextInput = document.getElementById("context-input");
+    const questionInput = document.getElementById("question-input");
+    const answerInput = document.getElementById("answer-input");
+    const form = document.getElementById("predict-form");
+    const submitBtn = document.getElementById("submit-btn");
+    const clearBtn = document.getElementById("clear-btn");
+    const errorBox = document.getElementById("error-box");
+    const resultPlaceholder = document.getElementById("result-placeholder");
+    const resultContent = document.getElementById("result-content");
+
+    const SHORT_TITLES = [
+      "1. True Sentence",
+      "2. Wrong City",
+      "3. Short True",
+      "4. Wrong Year"
+    ];
+
+    async function loadExamples() {
+      try {
+        const res = await fetch("/examples");
+        if (!res.ok) return;
+        const data = await res.json();
+        const container = document.getElementById("examples-container");
+        container.innerHTML = '<span class="presets-label">Try Example:</span>';
+
+        const chips = [];
+        (data.examples || []).forEach((ex, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "preset-chip" + (idx === 0 ? " active" : "");
+          const dotClass = ex.expected === "grounded" ? "grounded" : "hallucinated";
+          const labelText = SHORT_TITLES[idx] || ex.title;
+          btn.innerHTML = `<span class="chip-dot ${dotClass}"></span><span>${labelText}</span>`;
+          btn.addEventListener("click", () => {
+            chips.forEach((c) => c.classList.remove("active"));
+            btn.classList.add("active");
+            contextInput.value = ex.context;
+            questionInput.value = ex.question;
+            answerInput.value = ex.answer;
+            runPrediction();
+          });
+          chips.push(btn);
+          container.appendChild(btn);
+        });
+
+        if (data.examples && data.examples.length > 0) {
+          contextInput.value = data.examples[0].context;
+          questionInput.value = data.examples[0].question;
+          answerInput.value = data.examples[0].answer;
+          runPrediction();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function formatPct(val) {
+      return (val * 100).toFixed(0) + "%";
+    }
+
+    function buildSimpleSummary(isHallucination, s) {
+      if (!isHallucination) {
+        return "The answer matches the facts in your context paragraph and does not add made-up information.";
+      }
+      const reasons = [];
+      if (s.ungrounded_entity_flag >= 0.5) {
+        reasons.push("mentions a name or place not found in the context");
+      }
+      if (s.ungrounded_number_flag >= 0.5) {
+        reasons.push("uses a number or year that does not match the context");
+      }
+      if (s.novel_ungrounded_token_ratio >= 0.3 && reasons.length === 0) {
+        reasons.push("includes words or claims that are not in the context");
+      }
+      return reasons.length > 0
+        ? `This answer ${reasons.join(" and ")}.`
+        : "This answer contains claims that are not supported by your context paragraph.";
+    }
+
+    function renderSimpleChecklist(s) {
+      const wordsOk = s.new_info_grounding_ratio >= 0.7;
+      const namesOk = s.ungrounded_entity_flag < 0.5;
+      const numbersOk = s.ungrounded_number_flag < 0.5;
+      const phraseOk = s.new_info_substring_in_ctx >= 0.5 || s.char_ngram_containment >= 0.75;
+
+      const items = [
+        {
+          title: "Key Words in Context",
+          desc: "Are the main answer words present in the reference text?",
+          ok: wordsOk,
+          statusText: wordsOk
+            ? `Yes (${formatPct(s.new_info_grounding_ratio)} matched)`
+            : `No (${formatPct(s.new_info_grounding_ratio)} matched)`,
+        },
+        {
+          title: "Names & Places",
+          desc: "Do people, cities, and proper names match the text?",
+          ok: namesOk,
+          statusText: namesOk ? "All Names Match" : "Unlisted Name Found",
+        },
+        {
+          title: "Numbers & Years",
+          desc: "Do dates, years, and amounts match the text?",
+          ok: numbersOk,
+          statusText: numbersOk ? "All Numbers Match" : "Number / Year Mismatch",
+        },
+        {
+          title: "Direct Phrase Match",
+          desc: "Does the core answer phrase appear directly in the text?",
+          ok: phraseOk,
+          statusText: phraseOk ? "Found in Text" : "Not Found in Text",
+        },
+      ];
+
+      document.getElementById("checklist-stack").innerHTML = items
+        .map(
+          (item) => `
+        <div class="check-row">
+          <div class="check-info">
+            <span class="check-title">${item.title}</span>
+            <span class="check-desc">${item.desc}</span>
+          </div>
+          <span class="status-badge ${item.ok ? "ok" : "warn"}">${item.statusText}</span>
+        </div>`
+        )
+        .join("");
+    }
+
+    async function runPrediction() {
+      errorBox.style.display = "none";
+      const payload = {
+        context: contextInput.value.trim(),
+        question: questionInput.value.trim(),
+        answer: answerInput.value.trim(),
+      };
+      if (!payload.context || !payload.question || !payload.answer) {
+        errorBox.textContent = "Please fill in the Context, Question, and Answer fields.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Checking...";
+      try {
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const detail = Array.isArray(data.detail)
+            ? data.detail.map((d) => d.msg).join("; ")
+            : data.detail || "Check failed.";
+          throw new Error(detail);
+        }
+
+        resultPlaceholder.style.display = "none";
+        resultContent.style.display = "flex";
+
+        const card = document.getElementById("verdict-card");
+        const title = document.getElementById("verdict-title");
+        const badge = document.getElementById("verdict-badge");
+
+        if (data.is_hallucination) {
+          card.className = "verdict-card hallucinated";
+          title.textContent = "Hallucination Detected";
+          badge.textContent = "Not in Context";
+        } else {
+          card.className = "verdict-card grounded";
+          title.textContent = "Correct (No Hallucination)";
+          badge.textContent = "Matches Context";
+        }
+
+        document.getElementById("verdict-summary").textContent =
+          buildSimpleSummary(data.is_hallucination, data.grounding_signals);
+
+        const gPct = (data.grounding_score * 100).toFixed(1) + "%";
+        const hPct = (data.hallucination_probability * 100).toFixed(1) + "%";
+        document.getElementById("grounding-score-val").textContent = gPct;
+        document.getElementById("hallucination-prob-val").textContent = hPct;
+        document.getElementById("grounding-bar").style.width = gPct;
+        document.getElementById("hallucination-bar").style.width = hPct;
+
+        renderSimpleChecklist(data.grounding_signals);
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Check Answer";
+      }
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      runPrediction();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      contextInput.value = "";
+      questionInput.value = "";
+      answerInput.value = "";
+      document.querySelectorAll(".preset-chip").forEach((c) => c.classList.remove("active"));
+      errorBox.style.display = "none";
+      resultContent.style.display = "none";
+      resultPlaceholder.style.display = "flex";
+    });
+
+    loadExamples();
+  </script>
+</body>
+</html>
