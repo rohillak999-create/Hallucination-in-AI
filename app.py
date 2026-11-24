@@ -130,11 +130,22 @@ PRESET_EXAMPLES: List[Dict[str, str]] = [
 
 
 def load_model_and_metadata() -> tuple[Any, Dict[str, Any]]:
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"Trained model artifact not found at {MODEL_PATH}. Run `python train.py` first."
-        )
-    pipeline = joblib.load(MODEL_PATH)
+    pipeline = None
+    if MODEL_PATH.exists():
+        try:
+            pipeline = joblib.load(MODEL_PATH)
+            pipeline.predict(
+                [{"context": "Sample context.", "question": "Sample?", "answer": "Sample."}]
+            )
+        except Exception:
+            pipeline = None
+
+    if pipeline is None:
+        from train import train_and_track
+
+        train_and_track()
+        pipeline = joblib.load(MODEL_PATH)
+
     metadata: Dict[str, Any] = {}
     if METADATA_PATH.exists():
         with METADATA_PATH.open("r", encoding="utf-8") as f:
